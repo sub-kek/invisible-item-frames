@@ -1,0 +1,8 @@
+name: InvisibleItemFrames
+version: ${project.version}
+main: me.subkek.iif.InvisibleIF
+authors: ['sub-kek']
+api-version: 1.16
+load: POSTWORLD
+description: 'The simple IIF plugin ;)'
+website: 'https://github.com/sub-kek'
