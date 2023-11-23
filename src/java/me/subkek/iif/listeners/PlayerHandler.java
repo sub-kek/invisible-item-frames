@@ -40,7 +40,9 @@ public class PlayerHandler implements Listener {
 
         event.setCancelled(true);
         ItemFrame itemFrame = (ItemFrame) event.getEntity();
-        itemFrame.getWorld().dropItem(itemFrame.getLocation(), itemFrame.getItem());
+
+        if (itemFrame.getItem() != null)
+            itemFrame.getWorld().dropItem(itemFrame.getLocation(), itemFrame.getItem());
         itemFrame.remove();
 
         ItemStack itemStack = new ItemStack(Material.ITEM_FRAME);
