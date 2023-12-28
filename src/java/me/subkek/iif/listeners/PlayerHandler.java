@@ -1,6 +1,8 @@
 package me.subkek.iif.listeners;
 
 import me.subkek.iif.InvisibleIF;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
@@ -9,6 +11,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockFadeEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.hanging.HangingBreakEvent;
 import org.bukkit.event.hanging.HangingPlaceEvent;
@@ -41,19 +44,9 @@ public class PlayerHandler implements Listener {
         event.setCancelled(true);
         ItemFrame itemFrame = (ItemFrame) event.getEntity();
 
-        if (itemFrame.getItem() != null)
-            itemFrame.getWorld().dropItem(itemFrame.getLocation(), itemFrame.getItem());
+        if (!itemFrame.getItem().getType().isAir()) itemFrame.getWorld().dropItem(getDropLocation(itemFrame), itemFrame.getItem());
+        itemFrame.getWorld().dropItem(getDropLocation(itemFrame), plugin.getIFItem());
         itemFrame.remove();
-
-        ItemStack itemStack = new ItemStack(Material.ITEM_FRAME);
-        ItemMeta itemMeta = itemStack.getItemMeta();
-        PersistentDataContainer data = itemMeta.getPersistentDataContainer();
-
-        data.set(plugin.invisibleKey, PersistentDataType.STRING, "true");
-
-        itemStack.setItemMeta(itemMeta);
-
-        itemFrame.getWorld().dropItem(event.getEntity().getLocation(), itemStack);
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
@@ -62,8 +55,13 @@ public class PlayerHandler implements Listener {
         if (!isInvisibleFrame((ItemFrame) event.getRightClicked())) return;
         ItemFrame itemFrame = (ItemFrame) event.getRightClicked();
 
-        itemFrame.setGlowing(false);
-        itemFrame.setVisible(false);
+        makeVisible(itemFrame, false);
+
+        Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, () -> {
+            if (itemFrame.getItem().getType().isAir()) {
+                makeVisible(itemFrame, true);
+            }
+        }, 20);
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
@@ -72,8 +70,19 @@ public class PlayerHandler implements Listener {
         if (!isInvisibleFrame((ItemFrame) event.getEntity())) return;
         ItemFrame itemFrame = (ItemFrame) event.getEntity();
 
-        itemFrame.setGlowing(true);
-        itemFrame.setVisible(true);
+        makeVisible(itemFrame, true);
+
+        Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, () -> {
+            if (!itemFrame.getItem().getType().isAir()) {
+                makeVisible(itemFrame, false);
+            }
+        }, 20);
+    }
+
+    @EventHandler
+    public void onBlockFade(BlockFadeEvent event) {
+        if (event.getBlock().getType().equals(Material.SNOW) || event.getBlock().getType().equals(Material.ICE))
+            event.setCancelled(true);
     }
 
     private boolean isFrameEntity(Entity entity)
@@ -89,5 +98,14 @@ public class PlayerHandler implements Listener {
     private boolean isInvisibleFrame(ItemFrame itemFrame) {
         PersistentDataContainer data = itemFrame.getPersistentDataContainer();
         return data.has(plugin.invisibleKey, PersistentDataType.STRING);
+    }
+
+    private Location getDropLocation(Entity entity) {
+        return entity.getLocation().toBlockLocation().add(0.5, 0.5, 0.5);
+    }
+
+    private void makeVisible(ItemFrame itemFrame, boolean val) {
+        itemFrame.setGlowing(val);
+        itemFrame.setVisible(val);
     }
 }
